@@ -135,8 +135,6 @@ class Dataset:
             raise ValueError("Dataset does not have a label")
         return np.unique(self.y)
 
-    import numpy as np
-
     def get_mean(self) -> np.ndarray:
         """
         Returns the mean of each numeric feature.
@@ -343,27 +341,23 @@ class Dataset:
     
     def replace_nulls(self, method='mean'):
         """
-        Replace all NaN values of each feature using the specified method.
+        Replace all NaN values of each numeric feature using the specified method.
 
         Parameters
         ----------
         method : str or callable, optional (default='mean')
             Method of replacing
         """
-        null_indices = np.where(np.isnan(self.X))
+        numeric_mask = self.get_numeric_mask()
 
         if method == 'mean':
-            self.self.X[null_indices] = np.nanmean(self.X, axis=0)[null_indices[1]]
+            means = np.nanmean(self.get_numeric_X(), axis=0)
+            self.X[:, numeric_mask] = np.where(np.isnan(self.X[:, numeric_mask]), means, self.X[:, numeric_mask])
         elif method == 'median':
-            self.X[null_indices] = np.nanmedian(self.X, axis=0)[null_indices[1]]
-        elif method == 'mode':
-            for i in range(self.X.shape[1]):
-                col = self.X[:, i]
-                non_null_values = col[~np.isnan(col)]
-                if len(non_null_values) > 0:
-                    self.X[np.isnan(self.X[:, i]), i] = mode(non_null_values)[0][0]
+            medians = np.nanmedian(self.get_numeric_X(), axis=0)
+            self.X[:, numeric_mask] = np.where(np.isnan(self.X[:, numeric_mask]), medians, self.X[:, numeric_mask])
         else:
-            raise ValueError("Invalid method. Options are 'mean', 'median' and 'mode'.")
+            raise ValueError("Invalid method: {}".format(method))
 
     def count_nulls(self) -> np.ndarray:
         """
