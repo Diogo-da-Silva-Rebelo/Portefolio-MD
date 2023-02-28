@@ -353,9 +353,9 @@ class Dataset:
         null_indices = np.where(np.isnan(self.X))
 
         if method == 'mean':
-            self.self.X[null_indices] = np.nanmean(self.X, aself.Xis=0)[null_indices[1]]
+            self.self.X[null_indices] = np.nanmean(self.X, axis=0)[null_indices[1]]
         elif method == 'median':
-            self.X[null_indices] = np.nanmedian(self.X, aself.Xis=0)[null_indices[1]]
+            self.X[null_indices] = np.nanmedian(self.X, axis=0)[null_indices[1]]
         elif method == 'mode':
             for i in range(self.X.shape[1]):
                 col = self.X[:, i]
