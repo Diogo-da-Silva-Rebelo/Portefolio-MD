@@ -1,11 +1,11 @@
 # Engenharia do Conhecimento
 ## Unidade Curricular
-    Mineração de Dados, inserida no curso de Mestrado em Engenharia Informática, 2022-2023.
+Mineração de Dados, inserida no curso de Mestrado em Engenharia Informática, 2022-2023.
 ## Portefolio-MD
-    Conjunto de todo o código desenvolvido no âmbito da construção autónoma de um portefólio que sirva de apoio
-    à compreensão dos conteúdos indispensáveis lecionados ao longo do semestre.
+Conjunto de todo o código desenvolvido no âmbito da construção autónoma de um portefólio  
+que sirva de apoio à compreensão dos conteúdos indispensáveis lecionados ao longo do semestre.
 ### Elementos:
-    Este repositório foi desenvolvido pelos alunos:
+Este repositório foi desenvolvido pelos alunos:
   * Lídia Sousa (PG 50551)
   * Diogo Rebelo (PG 50327)
 ## Setup
