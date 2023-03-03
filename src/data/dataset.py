@@ -46,7 +46,6 @@ class Dataset:
             self.discrete_mask = np.zeros(X.shape[1], dtype=bool)
             self.discrete_mask[np.isin(features, discrete_features)] = True
             self.discrete_mask[np.isin(features, numeric_features)] = False
-            print(self.discrete_mask)
 
         if y is not None and label is None:
             label = "y"
@@ -65,6 +64,50 @@ class Dataset:
         discrete_mask = self.get_discrete_mask()
         if any(~discrete_mask):
             self.X[:, ~discrete_mask] = self.X[:, ~discrete_mask].astype(np.float)
+
+    def get_X(self):
+        """
+        Getter for X array.
+
+        Returns
+        -------
+        X: numpy.ndarray (n_samples, n_features)
+            The feature matrix
+        """
+        return self.X
+    
+    def get_y(self):
+        """
+        Getter for y array.
+
+        Returns
+        -------
+        y: numpy.ndarray (n_samples, 1)
+            The label vector
+        """
+        return self.y
+    
+    def get_features(self):
+        """
+        Getter for features array.
+
+        Returns
+        -------
+        features: list of str (n_features)
+            The feature names
+        """
+        return self.features
+    
+    def get_label(self):
+        """
+        Getter for label name.
+
+        Returns
+        -------
+        label: str (1)
+            The label name
+        """
+        return self.label
 
     def get_discrete_mask(self) -> np.ndarray:
         """
@@ -259,7 +302,8 @@ class Dataset:
             "median": self.get_median(),
             "var": self.get_var(),
             "min": self.get_min(),
-            "max": self.get_max()
+            "max": self.get_max(),
+            "nan": self.count_nulls()
         }
         return pd.DataFrame.from_dict(data, orient="index", columns=self.features)
 
@@ -334,28 +378,26 @@ class Dataset:
         y = np.random.randint(0, n_classes, n_samples)
         return cls(X, y, features=features, label=label)
     
-    # testar
     def replace_nulls(self, method='mean'):
         """
         Replace all NaN values of each numeric feature using the specified method.
 
         Parameters
         ----------
-        method : str or callable, optional (default='mean')
+        method : str, optional (default='mean')
             Method of replacing
         """
         discrete_mask = self.get_discrete_mask()
 
         if method == 'mean':
             means = np.nanmean(self.X[:, ~discrete_mask], axis=0)
-            self.X[:, ~discrete_mask] = np.where(np.isnan(self.X[:, ~discrete_mask]), means, self.X[:, ~discrete_mask])
+            self.X[:, ~discrete_mask] = np.where(np.isnan(self.X[:, ~discrete_mask].astype(np.float32)), means, self.X[:, ~discrete_mask])
         elif method == 'median':
             medians = np.nanmedian(self.X[:, ~discrete_mask], axis=0)
-            self.X[:, ~discrete_mask] = np.where(np.isnan(self.X[:, ~discrete_mask]), medians, self.X[:, ~discrete_mask])
+            self.X[:, ~discrete_mask] = np.where(np.isnan(self.X[:, ~discrete_mask].astype(np.float32)), medians, self.X[:, ~discrete_mask])
         else:
             raise ValueError("Invalid method: {}".format(method))
 
-    # todo: lidar com tipos discretos
     def count_nulls(self) -> np.ndarray:
         """
         Counts the number of null values in each numeric feature of X.
@@ -366,5 +408,7 @@ class Dataset:
             Array containing the number of null values in each feature.
         """
         discrete_mask = self.get_discrete_mask()
-        return np.sum(np.isnan(self.X[:, ~discrete_mask]), axis=0)
+        bool_array = np.isnan(self.X[:, ~discrete_mask].astype(np.float32))
+        nulls = np.count_nonzero(bool_array, axis = 0)
+        return nulls
     

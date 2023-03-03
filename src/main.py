@@ -1,4 +1,4 @@
-from rw.to_csv import read_csv
+from rw.to_csv import *
 
 def test1():
     print("="*60 + "\n")
@@ -14,6 +14,10 @@ def test1():
     print(f"Min:    {ds.get_min()}")
     print(f"Null:   {ds.count_nulls()}")
     print("\033[93m{}\033[00m".format("\nResumo: "))
+    print(ds.summary())
+
+    print("\nReplacing null values...\n")
+    ds.replace_nulls()
     print(ds.summary())
 
 def test2():
@@ -41,6 +45,12 @@ def test3():
     print("\033[93m{}\033[00m".format("Obtendo estatísticas..."))
     print("\033[93m{}\033[00m".format("\nResumo: "))
     print(ds.summary())
+
+    print("\nReplacing null values...\n")
+    ds.replace_nulls()
+    print(ds.summary())
+    write_csv(filename="../datasets/titanic_no_missing_data.csv",dataset=ds, features=True,label=True)
+
 
 def main():
     test3()
