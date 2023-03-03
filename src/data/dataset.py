@@ -2,8 +2,6 @@ from typing import Tuple, Sequence
 
 import numpy as np
 import pandas as pd
-from scipy.stats import mode
-
 
 class Dataset:
     def __init__(self, X: np.ndarray, 
@@ -41,15 +39,14 @@ class Dataset:
         if discrete_features is None and numeric_features is None:
             raise ValueError("At least one of discrete_features or numeric_features must be provided")
         elif discrete_features is None:
-            self.discrete_mask = np.zeros(X.shape[1], dtype=bool)
-            self.discrete_mask[numeric_features] = False
+            self.discrete_mask = np.isin(features, numeric_features)
         elif numeric_features is None:
-            self.discrete_mask = np.zeros(X.shape[1], dtype=bool)
-            self.discrete_mask[discrete_features] = True
+            self.discrete_mask = np.isin(features, discrete_features, invert=True)
         else:
             self.discrete_mask = np.zeros(X.shape[1], dtype=bool)
-            self.discrete_mask[discrete_features] = True
-            self.discrete_mask[numeric_features] = False
+            self.discrete_mask[np.isin(features, discrete_features)] = True
+            self.discrete_mask[np.isin(features, numeric_features)] = False
+            print(self.discrete_mask)
 
         if y is not None and label is None:
             label = "y"
@@ -58,6 +55,16 @@ class Dataset:
         self.y = y
         self.features = features
         self.label = label
+        self.to_numeric()
+
+    def to_numeric(self):
+        """
+        Ensures that numeric features have a numeric type.
+
+        """
+        discrete_mask = self.get_discrete_mask()
+        if any(~discrete_mask):
+            self.X[:, ~discrete_mask] = self.X[:, ~discrete_mask].astype(np.float)
 
     def get_discrete_mask(self) -> np.ndarray:
         """
@@ -70,17 +77,6 @@ class Dataset:
         """
         return self.discrete_mask
 
-    def get_numeric_mask(self) -> np.ndarray:
-        """
-        Returns the boolean mask indicating which columns in X correspond to numeric features.
-
-        Returns
-        -------
-        numpy.ndarray (n_features,)
-            Boolean mask indicating which columns in X correspond to numeric features
-        """
-        return ~self.discrete_mask
-
     def get_discrete_X(self) -> np.ndarray:
         """
         Returns the subset of X corresponding to the discrete features.
@@ -91,17 +87,6 @@ class Dataset:
             Subset of X corresponding to the discrete features
         """
         return self.X[:, self.discrete_mask]
-
-    def get_numeric_X(self) -> np.ndarray:
-        """
-        Returns the subset of X corresponding to the numeric features.
-
-        Returns
-        -------
-        numpy.ndarray (n_samples, n_numeric_features)
-            Subset of X corresponding to the numeric features
-        """
-        return self.X[:, ~self.discrete_mask]
 
     def shape(self) -> Tuple[int, int]:
         """
@@ -137,118 +122,128 @@ class Dataset:
 
     def get_mean(self) -> np.ndarray:
         """
-        Returns the mean of each numeric feature.
+        Computes the mean for each numeric feature in the dataset, and returns an array with the results. 
+        For discrete features, the corresponding value in the array is set to np.nan.
 
         Returns
         -------
-        numpy.ndarray (n_numeric_features,)
-            Array containing the mean of each numeric feature. If a feature is discrete or if its mean cannot be
-            computed, its corresponding value in the array is NaN.
+        numpy.ndarray (n_features,)
+            An array with the mean for each numeric feature. If a feature is discrete, the corresponding 
+            value in the array is np.nan.
         """
-        numeric_mask = self.get_numeric_mask()
-        means = np.full(numeric_mask.sum(), np.nan)
-        numeric_indices = np.where(numeric_mask)[0]
+        discrete_mask = self.get_discrete_mask()
 
-        for i in enumerate(self.features[numeric_mask]):
-            try:
-                means[i] = np.nanmean(self.X[:, numeric_indices[i]])
-            except TypeError:
-                # This feature is discrete or contains non-numeric values
-                pass
+        # Calculate the mean of each numeric feature
+        numeric_means = np.nanmean(self.X[:, ~discrete_mask], axis=0)
 
-        return means
+        # Create a result array with NaN values for discrete features
+        result = np.empty(self.X.shape[1])
+        result.fill(np.nan)
+
+        # Assign the numeric means to the result array
+        result[~discrete_mask] = numeric_means
+
+        return result
     
-    def get_variance(self) -> np.ndarray:
+    def get_var(self) -> np.ndarray:
         """
-        Returns the variance of each numeric feature.
+        Computes the variance for each numeric feature in the dataset, and returns an array with the results. 
+        For discrete features, the corresponding value in the array is set to np.nan.
 
         Returns
         -------
-        numpy.ndarray (n_features)
-            Array containing the variance of each numeric feature. If a feature is discrete or if its variance cannot be
-            computed, its corresponding value in the array is NaN.
+        numpy.ndarray (n_features,)
+            An array with the variance for each numeric feature. If a feature is discrete, the corresponding 
+            value in the array is np.nan.
         """
-        numeric_mask = self.get_numeric_mask()
-        vars = np.full(numeric_mask.sum(), np.nan)
-        numeric_indices = np.where(numeric_mask)[0]
+        discrete_mask = self.get_discrete_mask()
 
-        for i in enumerate(self.features[numeric_mask]):
-            try:
-                vars[i] = np.nanvar(self.X[:, numeric_indices[i]])
-            except TypeError:
-                # This feature is discrete or contains non-numeric values
-                pass
+        # Calculate the var of each numeric feature
+        numeric_vars = np.nanvar(self.X[:, ~discrete_mask], axis=0)
 
-        return vars
+        # Create a result array with NaN values for discrete features
+        result = np.empty(self.X.shape[1])
+        result.fill(np.nan)
+
+        # Assign the numeric vars to the result array
+        result[~discrete_mask] = numeric_vars
+
+        return result
 
     def get_median(self) -> np.ndarray:
         """
-        Returns the median of each numeric feature.
+        Computes the median for each numeric feature in the dataset, and returns an array with the results. 
+        For discrete features, the corresponding value in the array is set to np.nan.
 
         Returns
         -------
-        numpy.ndarray (n_features)
-            Array containing the median of each numeric feature. If a feature is discrete or if its median cannot be
-            computed, its corresponding value in the array is NaN.
+        numpy.ndarray (n_features,)
+            An array with the median for each numeric feature. If a feature is discrete, the corresponding 
+            value in the array is np.nan.
         """
-        numeric_mask = self.get_numeric_mask()
-        median = np.full(numeric_mask.sum(), np.nan)
-        numeric_indices = np.where(numeric_mask)[0]
+        discrete_mask = self.get_discrete_mask()
 
-        for i in enumerate(self.features[numeric_mask]):
-            try:
-                median[i] = np.nanmedian(self.X[:, numeric_indices[i]])
-            except TypeError:
-                # This feature is discrete or contains non-numeric values
-                pass
+        # Calculate the var of each numeric feature
+        numeric_median = np.nanmedian(self.X[:, ~discrete_mask], axis=0)
 
-        return vars
+        # Create a result array with NaN values for discrete features
+        result = np.empty(self.X.shape[1])
+        result.fill(np.nan)
+
+        # Assign the numeric median to the result array
+        result[~discrete_mask] = numeric_median
+
+        return result
     
     def get_max(self) -> np.ndarray:
         """
-        Returns the maximum value of each numeric feature.
+        Computes the maximum value for each numeric feature in the dataset, and returns an array with the results. 
+        For discrete features, the corresponding value in the array is set to np.nan.
 
         Returns
         -------
         numpy.ndarray (n_features,)
-            Array containing the maximum value of each numeric feature. If a feature is not numeric or if its maximum
-            cannot be computed, its corresponding value in the array is NaN.
+            An array with the maximum value for each numeric feature. If a feature is discrete, the corresponding 
+            value in the array is np.nan.
         """
-        numeric_mask = self.get_numeric_mask()
-        max_val = np.full(numeric_mask.sum(), np.nan)
-        numeric_indices = np.where(numeric_mask)[0]
+        discrete_mask = self.get_discrete_mask()
 
-        for i, idx in enumerate(numeric_indices):
-            try:
-                max_val[i] = np.nanmax(self.X[:, idx])
-            except ValueError:
-                # This feature is not numeric or contains non-numeric values
-                pass
+        # Calculate the var of each numeric feature
+        numeric_max = np.nanmax(self.X[:, ~discrete_mask], axis=0)
 
-        return max_val
+        # Create a result array with NaN values for discrete features
+        result = np.empty(self.X.shape[1])
+        result.fill(np.nan)
+
+        # Assign the numeric max to the result array
+        result[~discrete_mask] = numeric_max
+
+        return result
     
     def get_min(self) -> np.ndarray:
         """
-        Returns the minimum value of each numeric feature.
+        Computes the minimum value for each numeric feature in the dataset, and returns an array with the results. 
+        For discrete features, the corresponding value in the array is set to np.nan.
 
         Returns
         -------
         numpy.ndarray (n_features,)
-            Array containing the minimum value of each numeric feature. If a feature is not numeric or if its minimum
-            cannot be computed, its corresponding value in the array is NaN.
+            An array with the minimum value for each numeric feature. If a feature is discrete, the corresponding 
+            value in the array is np.nan.
         """
-        numeric_mask = self.get_numeric_mask()
-        min_val = np.full(numeric_mask.sum(), np.nan)
-        numeric_indices = np.where(numeric_mask)[0]
+        discrete_mask = self.get_discrete_mask()
 
-        for i, idx in enumerate(numeric_indices):
-            try:
-                min_val[i] = np.nanmin(self.X[:, idx])
-            except ValueError:
-                # This feature is not numeric or contains non-numeric values
-                pass
-            
-        return min_val
+        # Calculate the var of each numeric feature
+        numeric_min = np.nanmin(self.X[:, ~discrete_mask], axis=0)
+
+        # Create a result array with NaN values for discrete features
+        result = np.empty(self.X.shape[1])
+        result.fill(np.nan)
+
+        # Assign the numeric min to the result array
+        result[~discrete_mask] = numeric_min
+
+        return result
 
 
     def summary(self) -> pd.DataFrame:
@@ -262,7 +257,7 @@ class Dataset:
         data = {
             "mean": self.get_mean(),
             "median": self.get_median(),
-            "var": self.get_variance(),
+            "var": self.get_var(),
             "min": self.get_min(),
             "max": self.get_max()
         }
@@ -339,6 +334,7 @@ class Dataset:
         y = np.random.randint(0, n_classes, n_samples)
         return cls(X, y, features=features, label=label)
     
+    # testar
     def replace_nulls(self, method='mean'):
         """
         Replace all NaN values of each numeric feature using the specified method.
@@ -348,25 +344,27 @@ class Dataset:
         method : str or callable, optional (default='mean')
             Method of replacing
         """
-        numeric_mask = self.get_numeric_mask()
+        discrete_mask = self.get_discrete_mask()
 
         if method == 'mean':
-            means = np.nanmean(self.get_numeric_X(), axis=0)
-            self.X[:, numeric_mask] = np.where(np.isnan(self.X[:, numeric_mask]), means, self.X[:, numeric_mask])
+            means = np.nanmean(self.X[:, ~discrete_mask], axis=0)
+            self.X[:, ~discrete_mask] = np.where(np.isnan(self.X[:, ~discrete_mask]), means, self.X[:, ~discrete_mask])
         elif method == 'median':
-            medians = np.nanmedian(self.get_numeric_X(), axis=0)
-            self.X[:, numeric_mask] = np.where(np.isnan(self.X[:, numeric_mask]), medians, self.X[:, numeric_mask])
+            medians = np.nanmedian(self.X[:, ~discrete_mask], axis=0)
+            self.X[:, ~discrete_mask] = np.where(np.isnan(self.X[:, ~discrete_mask]), medians, self.X[:, ~discrete_mask])
         else:
             raise ValueError("Invalid method: {}".format(method))
 
+    # todo: lidar com tipos discretos
     def count_nulls(self) -> np.ndarray:
         """
-        Counts the number of null values in each feature of X.
+        Counts the number of null values in each numeric feature of X.
 
         Returns
         -------
         numpy.ndarray (n_features,)
             Array containing the number of null values in each feature.
         """
-        return np.sum(np.isnan(self.X), axis=0)
+        discrete_mask = self.get_discrete_mask()
+        return np.sum(np.isnan(self.X[:, ~discrete_mask]), axis=0)
     
