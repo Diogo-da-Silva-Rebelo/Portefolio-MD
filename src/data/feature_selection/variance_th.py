@@ -1,7 +1,7 @@
 import numpy as np
 from copy import copy
 
-from transformer import Transformer
+from data.transformer import Transformer
 from data.dataset import Dataset
 
 class VarianceThreshold(Transformer):
@@ -20,7 +20,7 @@ class VarianceThreshold(Transformer):
             self._var = np.var(X, axis=0)
 
     def transform(self, dataset, inline=False) -> Dataset:
-
+        # documentar
         if not dataset.all_numeric:
             raise ValueError("Theres is not encoded data. Consider using an encoder.")
         else:
@@ -29,11 +29,14 @@ class VarianceThreshold(Transformer):
             X_trans = X[:, features_mask]
             features_names = np.array(dataset.features)[features_mask]
             numeric_features = list(features_names)
+            new_discrete_mask = np.zeros(dataset.X.shape[1], dtype=bool)
+            new_discrete_mask[features_mask] = False
 
             if inline:
                 dataset.X = X_trans
                 dataset.features = features_names
                 dataset.numeric_features = numeric_features
+                dataset.discrete_mask = new_discrete_mask
                 return dataset
             else:
                 return Dataset(X=copy(X_trans),

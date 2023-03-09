@@ -4,7 +4,7 @@ from typing import Tuple, Union
 from scipy import stats
 
 
-def f_regress(dataset: Dataset) -> Union[Tuple[np.ndarray, np.ndarray],
+def f_regression(dataset: Dataset) -> Union[Tuple[np.ndarray, np.ndarray],
                                                 Tuple[float, float]]:
     """Scoring function for regressions
     

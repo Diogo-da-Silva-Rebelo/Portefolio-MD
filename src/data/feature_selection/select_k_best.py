@@ -1,16 +1,23 @@
-from transformer import Transformer
-from src.stats import f_classification, f_regression
+from data.transformer import Transformer
+from stats.f_classification import f_classification
+from stats.f_regression import f_regression
 from data.dataset import Dataset
+from copy import copy
+from typing import Callable
+import numpy as np
 
 class SelectKBest(Transformer):
 
-    def __init__(self, k: int, score_func=f_classification):
+    def __init__(self, k: int, score_func: Callable =f_classification) -> None:
         """The SelectKBest method selects the features according to the k highest scores
-        computed using a scoring function. 
-        :param k: Number of feature with best score to be selected
-        :type k: int
-        :param score_func: The scoring function, defaults to f_classif
-        :type score_func: callable, optional
+        computed using a scoring function.
+
+        Parameters
+        ---------- 
+        k: int
+            Number of feature with best score to be selected
+        score_func: callable, optional
+            The scoring function, defaults to f_classif
         -------------------------------------------------------------------------
         In this implementation we will consider the two F-statistics functions, 
         one for regression (f_regress) and the other for classification tasks (f_classif).
@@ -23,17 +30,34 @@ class SelectKBest(Transformer):
         self.k = k
         self.score_func = score_func
 
-    def fit(self, dataset):
-        self.F, self.p = self.score_func(dataset)
-
-    def transform(self, dataset, inline=False) -> Dataset:
+    def fit(self, dataset: Dataset)-> None:
         # documentar
         if not dataset.all_numeric:
             raise ValueError("Theres is not encoded data. Consider using an encoder.")
         else:
+            self.F, self.p = self.score_func(dataset)
+
+    def transform(self, dataset: Dataset, inline=False) -> Dataset:
+        # documentar
+        if not dataset.all_numeric:
+            raise ValueError("Theres is not encoded data. Consider using an encoder.")
+        else:
+
             top_k_indices = self.F.argsort()[-self.k:][::-1]
+
         if inline:
             dataset.X = dataset.X[:, top_k_indices]
+            dataset.features = [dataset.feature[i] for i in top_k_indices]
+            dataset.numeric_features = dataset.features
+            new_discrete_mask = np.zeros(dataset.X.shape[1], dtype=bool)
+            new_discrete_mask[top_k_indices] = False
+            return dataset
         else:
-            return Dataset(dataset.X[:, top_k_indices], dataset.y, feature_names=dataset.feature_names[top_k_indices])
-        pass
+            transformed_features = [dataset.features[i] for i in top_k_indices]
+            X_trans = dataset.X[:, top_k_indices]
+            
+            return Dataset(X=copy(X_trans), 
+                           y= copy(dataset.y), 
+                           features=transformed_features,
+                           numeric_features =list(dataset.features), 
+                           label=copy(dataset.label))
