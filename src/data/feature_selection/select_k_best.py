@@ -1,5 +1,6 @@
 from transformer import Transformer
 from src.stats import f_classification, f_regression
+from data.dataset import Dataset
 
 class SelectKBest(Transformer):
 
@@ -25,11 +26,14 @@ class SelectKBest(Transformer):
     def fit(self, dataset):
         self.F, self.p = self.score_func(dataset)
 
-## COMPLETAR
-# to-do
-    def transform(self, dataset, inline=False):
+    def transform(self, dataset, inline=False) -> Dataset:
         # documentar
         if not dataset.all_numeric:
             raise ValueError("Theres is not encoded data. Consider using an encoder.")
         else:
-            pass
+            top_k_indices = self.F.argsort()[-self.k:][::-1]
+        if inline:
+            dataset.X = dataset.X[:, top_k_indices]
+        else:
+            return Dataset(dataset.X[:, top_k_indices], dataset.y, feature_names=dataset.feature_names[top_k_indices])
+        pass
