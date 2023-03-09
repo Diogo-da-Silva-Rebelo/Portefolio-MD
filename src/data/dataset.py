@@ -56,6 +56,9 @@ class Dataset:
         self.label = label
         self.to_numeric()
 
+        if all(~self.discrete_mask): self.all_numeric = True
+        else: self.all_numeric = False
+
     def to_numeric(self):
         """
         Ensures that numeric features have a numeric type.
