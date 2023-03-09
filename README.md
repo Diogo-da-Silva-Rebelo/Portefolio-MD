@@ -15,6 +15,9 @@ Este repositório foi desenvolvido pelos alunos:
     `git clone https://github.com/YOUR_USERNAME/Portefolio-MD.git`
   3. Garantir que possui as dependências necessárias:
     `pip install -r requirements.txt`
+  4. Para testar:
+      * Garantir que se encontra na diretoria correta: `cd MD/src`
+      * Executar a função principal: `python3 main.py`
 
 ## Credits
 Código inspirado do repositório: https://github.com/cruz-f/si
