@@ -13,7 +13,7 @@ Este repositório foi desenvolvido pelos alunos:
     Repo: https://github.com/Diogo-da-Silva-Rebelo/Portefolio-MD
   2. Realizar o clone desse mesmo repositório na máquina local.
     `git clone https://github.com/YOUR_USERNAME/Portefolio-MD.git`
-  3. Garantir que possui as deoendências necessárias:
+  3. Garantir que possui as dependências necessárias:
     `pip install -r requirements.txt`
 
 ## Credits
