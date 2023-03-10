@@ -31,18 +31,42 @@ class SelectKBest(Transformer):
         self.score_func = score_func
 
     def fit(self, dataset: Dataset)-> None:
-        # documentar
+        """
+        Parameters
+        ----------
+        dataset: Dataset
+            The dataset to be fitted
+        -------------------------------------------------------------------------
+        """
+
+        # COMPLETAR ^^^^^
+
         if not dataset.all_numeric:
             raise ValueError("Theres is not encoded data. Consider using an encoder.")
         else:
             self.F, self.p = self.score_func(dataset)
 
     def transform(self, dataset: Dataset, inline=False) -> Dataset:
-        # documentar
+        """
+        Parameters
+        ----------
+        dataset: Dataset
+            The dataset to be transformed
+        inline: bool, optional
+            If True, the transformation is applied to the dataset, otherwise
+            a new dataset is returned, defaults to False
+        Returns
+        -------
+        dataset: Dataset
+            The transformed dataset
+        -------------------------------------------------------------------------
+        
+        """
+        # COMPLETAR ^^^^^
+        
         if not dataset.all_numeric:
             raise ValueError("Theres is not encoded data. Consider using an encoder.")
         else:
-
             top_k_indices = self.F.argsort()[-self.k:][::-1]
 
         if inline:

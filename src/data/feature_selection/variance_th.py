@@ -7,11 +7,24 @@ from data.dataset import Dataset
 class VarianceThreshold(Transformer):
 
     def __init__(self, threshold = 0) -> None:
+        """
+        Parameters
+        ----------
+        threshold: float, optional
+            The threshold to be used to filter the features, defaults to 0
+        """
+
         if threshold < 0:
             raise ValueError("The thershold must be a non-negative value.")
         self.threshold = threshold
 
     def fit(self, dataset: Dataset) -> None:
+        """
+        Parameters
+        ----------
+        dataset: Dataset
+            The dataset to be fitted
+        """
 
         if not dataset.all_numeric:
             raise ValueError("Theres is not encoded data. Consider using an encoder.")
@@ -20,7 +33,23 @@ class VarianceThreshold(Transformer):
             self._var = np.var(X, axis=0)
 
     def transform(self, dataset, inline=False) -> Dataset:
-        # documentar
+        """ 
+        Parameters
+        ----------
+        dataset: Dataset
+            The dataset to be transformed
+        inline: bool, optional
+            If True, the transformation is applied to the dataset, otherwise
+            a new dataset is returned, defaults to False
+        Returns
+        -------
+        dataset: Dataset
+            The transformed dataset
+        
+        -----------------------------------------------------------------
+
+        
+        """
         if not dataset.all_numeric:
             raise ValueError("Theres is not encoded data. Consider using an encoder.")
         else:
