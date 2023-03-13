@@ -19,21 +19,19 @@ class Node:
 
 class DecisionTree(Model):
 
-    def __init__(self, criterion = 'gini', max_depth=3, min_samples_leaf=1, min_samples_split=2):
+    """
+    Decision Tree class built with Nodes' class.
+    The generated tree uses entropy as criterion, class threshold for conflict resolution and (implicit) pre-pruning.
+    Check: https://towardsdatascience.com/ml-from-scratch-decision-tree-c6444102436a
+    """
+
+    def __init__(self, max_depth=3, min_samples_leaf=1, min_samples_split=2):
         super().__init__()
         self.max_depth = max_depth
         self.min_samples_leaf = min_samples_leaf
         self.min_samples_split = min_samples_split
         self.tree = None
         self.classes = None
-
-        if criterion == 'entropy':
-            self.criterion = 'entropy'
-        elif criterion == 'log_loss':
-            self.criterion = 'log_loss'
-        else:
-            raise ValueError("Criterion : {'gini', 'entropy', 'log_loss'}")
-        
 
     def node_probs(self, y):
         """
