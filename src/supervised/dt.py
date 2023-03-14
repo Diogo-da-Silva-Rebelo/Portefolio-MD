@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from .model import Model
 from utils.metrics import accuracy_score
 
@@ -18,20 +19,31 @@ class Node:
 
 
 class DecisionTree(Model):
-
     """
     Decision Tree class built with Nodes' class.
-    The generated tree uses entropy as criterion, class threshold for conflict resolution and (implicit) pre-pruning.
-    Check: https://towardsdatascience.com/ml-from-scratch-decision-tree-c6444102436a
+    The generated tree uses diferent criterions, conflict resolutions and pruning (pre/post)
     """
 
-    def __init__(self, max_depth=3, min_samples_leaf=1, min_samples_split=2):
+    def __init__(self, criterion = 'gini',
+                  prun = 'pre',
+                  max_depth=3, 
+                  min_samples_leaf=1, 
+                  min_samples_split=2,
+                  x_test = None,
+                  y_test = None):
+        
         super().__init__()
+        self.criterion = criterion
+        self.prun = prun
         self.max_depth = max_depth
         self.min_samples_leaf = min_samples_leaf
         self.min_samples_split = min_samples_split
-        self.tree = None
-        self.classes = None
+
+        if prun == 'post' and (x_test is None or y_test is None):
+            raise ValueError("Test set must be provided for post pruning.") 
+        
+        self.x_val = x_test
+        self.y_val = y_test
 
     def node_probs(self, y):
         """
@@ -46,117 +58,172 @@ class DecisionTree(Model):
 
     # gini index = 1 - sum ( prob[i]^2 ) for all i’s
     def gini(self, probas):
-        """Calculates gini criterion"""
+        """
+        Calculates gini criterion
+        """
         return 1 - np.sum(probas**2)
+    
+    def calc_impurity(self, y, criterion='gini'):
+        """
+        Calculates impurity using the specified criterion.
+        """
+        if criterion == 'gini':
+            return self.gini(self.node_probs(y))
+        elif criterion == 'entropy':
+            return self.entropy(self.node_probs(y))
+        elif criterion == 'loss':
+            return self.log_loss(self.node_probs(y))
+        else:
+            raise ValueError(f'Invalid criterion: {criterion}')
 
-    def calc_impurity(self, y):
-        '''Wrapper for the impurity calculation. Calculates probas first and then passses them
-        to the Gini criterion.
-        '''
-        return self.gini(self.node_probs(y))
+    def entropy(self, probas):
+        """
+        Calculates entropy for the given probabilities.
+        """
+        entropy = 0
+        for p in probas:
+            if p != 0:
+                entropy -= p * math.log(p, 2)
+        return entropy
 
-
-    def calc_best_split(self, X, y):
-        '''Calculates the best possible split for the concrete node of the tree'''
-
-        bestSplitCol = None
-        bestThresh = None
-        bestInfoGain = -999
-
-        impurityBefore = self.calc_impurity(y)
-
-        # for each column in X
-        for col in range(X.shape[1]):
-            x_col = X[:, col]
-
-            # for each value in the column
-            for x_i in x_col:
-                threshold = x_i
-                y_right = y[x_col > threshold]
-                y_left = y[x_col <= threshold]
-
-                if y_right.shape[0] == 0 or y_left.shape[0] == 0:
-                    continue
-
-                # calculate impurity for the right and left nodes
-                impurityRight = self.calc_impurity(y_right)
-                impurityLeft = self.calc_impurity(y_left)
-
-                # calculate information gain
-                infoGain = impurityBefore
-                infoGain -= (impurityLeft * y_left.shape[0] / y.shape[0]) + \
-                    (impurityRight * y_right.shape[0] / y.shape[0])
-
-                # is this infoGain better then all other?
-                if infoGain > bestInfoGain:
-                    bestSplitCol = col
-                    bestThresh = threshold
-                    bestInfoGain = infoGain
-
-        # if we still didn't find the split
-        if bestInfoGain == -999:
-            return None, None, None, None, None, None
-
-        # making the best split
-
-        x_col = X[:, bestSplitCol]
-        x_left, x_right = X[x_col <= bestThresh, :], X[x_col > bestThresh, :]
-        y_left, y_right = y[x_col <= bestThresh], y[x_col > bestThresh]
-
-        return bestSplitCol, bestThresh, x_left, y_left, x_right, y_right
-
-    def build_dt(self, X, y, node):
-        '''
-        Recursively builds decision tree from the top to bottom
-        '''
-        # checking for the terminal conditions
-        if node.depth >= self.max_depth:
-            node.is_leaf = True
-            return
-
-        if X.shape[0] < self.min_samples_split:
-            node.is_leaf = True
-            return
-
-        if np.unique(y).shape[0] == 1:
-            node.is_leaf = True
-            return
-
-        # calculating current split
-        splitCol, thresh, x_left, y_left, x_right, y_right = self.calc_best_split(X, y)
-
-        if splitCol is None:
-            node.is_leaf = True
-
-        if x_left.shape[0] < self.min_samples_leaf or x_right.shape[0] < self.min_samples_leaf:
-            node.is_leaf = True
-            return
-
-        node.column = splitCol
-        node.threshold = thresh
-
-        # creating left and right child nodes
-        node.left = Node()
-        node.left.depth = node.depth + 1
-        node.left.probas = self.node_probs(y_left)
-
-        node.right = Node()
-        node.right.depth = node.depth + 1
-        node.right.probas = self.node_probs(y_right)
-
-        # splitting recursevely
-        self.build_dt(x_right, y_right, node.right)
-        self.build_dt(x_left, y_left, node.left)
+    def log_loss(self, probas):
+        """
+        Calculates log loss for the given probabilities.
+        """
+        log_loss = 0
+        for p in probas:
+            if p == 0:
+                log_loss += 1000 # To avoid division by 0
+            elif p == 1:
+                log_loss += 0
+            else:
+                log_loss -= math.log(p, 2)
+        return log_loss
 
     def fit(self, dataset):
         self.dataset = dataset
-        X, y = dataset.getXy()
+        X, y = dataset.get_X(), dataset.get_y()
         self.classes = np.unique(y)
-        self.Tree = Node()
-        self.Tree.depth = 1
-        self.Tree.probas = self.node_probs(y)
-        self.build_dt(X, y, self.Tree)
+        self.tree = Node()
+        self.tree.depth = 1
+        self.tree.probas = self.node_probs(y)
+        self.build_tree(X, y, self.tree)
         self.is_fitted = True
+    
+    def find_best_split(self, X_idx, y):
+       """
+       Calculates the best possible split for the concrete node of the tree
+       """
+
+       y = np.array(y, dtype=np.int64)
+
+       best_col = None
+       best_thr = None
+       best_info_gain = -np.inf
+
+       previous_impurity = self.calc_impurity(y)
+
+       for col in range(X_idx.shape[1]):
+           x_col = X_idx[:, col]
+
+           for x_i in x_col:
+               threshold = x_i
+               left_idx, right_idx = y[x_col <= threshold], y[x_col > threshold]
+
+               if left_idx.shape[0] == 0 or right_idx.shape[0] == 0:
+                   continue
+
+               # Calculate impurity for current split
+               right_impurity = self.calc_impurity(right_idx)
+               left_impurity = self.calc_impurity(left_idx)
+               info_gain = previous_impurity
+               info_gain -= (left_impurity * left_idx.shape[0] / left_idx.shape[0]) + (right_impurity * right_idx.shape[0] / y.shape[0])
+
+               if info_gain > best_info_gain:
+                   best_col = col
+                   best_thr = threshold
+                   best_info_gain = info_gain
+
+               if best_info_gain == -np.inf:
+                   return None, None, None, None, None, None
+
+               x_col = X_idx[:, best_col]
+               x_left, x_right = X_idx[x_col <= best_thr, :], X_idx[x_col > best_thr, :]
+               y_left, y_right = y[x_col <= best_thr], y[x_col > best_thr]
+
+       return best_col, best_thr, x_left, y_left, x_right, y_right
+
+    def build_tree(self, X, y, node):
+        """
+        Builds the decision tree using the specified criterion, conflict resolution and pruning method.
+        """
+    
+        # Stop condition - leaf node
+        if X.shape[0] < self.min_samples_split or node.depth >= self.max_depth or np.unique(y).shape[0] == 1:
+            node.is_leaf = True
+            return
+    
+        # Splitting using specified criterion
+        best_col, best_thr, x_left, y_left, x_right, y_right = self.find_best_split(X, y)
+      
+        if best_col is None:
+            node.is_leaf = True
+
+        if node.threshold is None:
+            node.is_leaf = True
+
+        # Create node and recursively build subtrees
+        node.column = best_col
+        node.threshold = best_thr
+    
+        # Create left and right child nodes
+        node.left = Node()
+        node.left.depth = node.depth + 1
+        node.left.probas = self.node_probs(y_left)
+    
+        node.right = Node()
+        node.right.depth = node.depth + 1
+        node.right.probas = self.node_probs(y_right)
+    
+        # Split recursively
+        self.build_tree(x_right, y_right, node.right)
+        self.build_tree(x_left, y_left, node.left)
+    
+        # Stop condition - post-pruning
+        if self.prun == 'post':
+            self.is_fitted = True
+            # Prune the tree
+            while not node.is_leaf:
+                # Store the current state of the tree
+                old_left = node.left
+                old_right = node.right
+                old_is_leaf = node.is_leaf
+
+                # Prune the left subtree
+                node.left = Node()
+                node.left.depth = old_left.depth
+                node.left.probas = self.node_probs(y_left)
+                node.left.is_leaf = True
+
+                # Prune the right subtree
+                node.right = Node()
+                node.right.depth = old_right.depth
+                node.right.probas = self.node_probs(y_right)
+                node.right.is_leaf = True
+
+                # Check the accuracy of the pruned tree on the validation set
+                accuracy = accuracy_score(self.predict(self.x_val), self.y_val)
+
+                # If the pruned tree is worse, restore the old state and stop pruning
+                if accuracy < self.best_accuracy:
+                    node.left = old_left
+                    node.right = old_right
+                    node.is_leaf = old_is_leaf
+                    break
+                
+                # If the pruned tree is better, update the best accuracy and continue pruning
+                self.best_accuracy = accuracy
+                node.is_leaf = True
 
     def predict_sample(self, x, node):
         '''
@@ -165,10 +232,12 @@ class DecisionTree(Model):
         '''
         assert self.is_fitted, 'Model must be fit before predicting'
         # if we have reached the terminal node of the tree
-        if node.is_terminal:
+        if node.is_leaf:
             return node.probas
+        
+        indices = np.where(x[node.column] > node.threshold)[0]
 
-        if x[node.column] > node.threshold:
+        if len(indices) > 0:
             probas = self.predict_sample(x, node.right)
         else:
             probas = self.predict_sample(x, node.left)
@@ -176,14 +245,10 @@ class DecisionTree(Model):
 
     def predict(self, x):
         assert self.is_fitted, 'Model must be fit before predicting'
-        pred = np.argmax(self.predict_sample(x, self.Tree))
-        return pred
+        preds = []
+        for i in range(x.shape[0]):
+            pred = np.argmax(self.predict_sample(x[i], self.tree))
+            preds.append(pred)
+        return np.array(preds, dtype=float)
 
-    def cost(self, X=None, y=None):
-        X = X if X is not None else self.dataset.X
-        y = y if y is not None else self.dataset.y
-
-        y_pred = np.ma.apply_along_axis(self.predict,
-                                        axis=0, arr=X.T)
-        return accuracy_score(y, y_pred)
     

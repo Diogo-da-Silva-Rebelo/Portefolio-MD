@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from data.dataset import Dataset
-from numpy import np
+import numpy as np
 
 class Model(ABC):
 
@@ -18,8 +18,8 @@ class Model(ABC):
     @abstractmethod
     def predict(self, x: np.ndarray) -> None:
         raise NotImplementedError
-    
-    @abstractmethod
-    def cost(self, *args, **kwarg) -> None:
-        raise NotImplementedError
+
+    # @abstractmethod
+    # def cost(self, *args, **kwarg) -> None:
+    #     raise NotImplementedError
     

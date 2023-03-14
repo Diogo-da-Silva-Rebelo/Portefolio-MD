@@ -32,14 +32,14 @@ class SelectKBest(Transformer):
 
     def fit(self, dataset: Dataset)-> None:
         """
+        Fit based on the train data.
+
         Parameters
         ----------
         dataset: Dataset
             The dataset to be fitted
         -------------------------------------------------------------------------
         """
-
-        # COMPLETAR ^^^^^
 
         if not dataset.all_numeric:
             raise ValueError("Theres is not encoded data. Consider using an encoder.")
@@ -48,6 +48,8 @@ class SelectKBest(Transformer):
 
     def transform(self, dataset: Dataset, inline=False) -> Dataset:
         """
+
+
         Parameters
         ----------
         dataset: Dataset
@@ -55,6 +57,7 @@ class SelectKBest(Transformer):
         inline: bool, optional
             If True, the transformation is applied to the dataset, otherwise
             a new dataset is returned, defaults to False
+
         Returns
         -------
         dataset: Dataset
@@ -62,7 +65,6 @@ class SelectKBest(Transformer):
         -------------------------------------------------------------------------
         
         """
-        # COMPLETAR ^^^^^
         
         if not dataset.all_numeric:
             raise ValueError("Theres is not encoded data. Consider using an encoder.")
