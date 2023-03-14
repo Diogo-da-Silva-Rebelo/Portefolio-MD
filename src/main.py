@@ -95,7 +95,7 @@ def test_dt():
     print("\033[93m{}\033[00m".format(f"Dividindo dataset: {dataset_name}\n"))
     train_data, test_data = train_test_split(ds)
     print(f"Shape of train data [X_train]: ({train_data.get_X().shape[0]},{train_data.get_X().shape[1]})")
-    print(f"Shape of test data   [X_test]: ({test_data.get_X().shape[0]}, {test_data.get_X().shape[1]})")
+    print(f"Shape of test data   [X_test]: ({test_data.get_X().shape[0]},{test_data.get_X().shape[1]})")
 
     print("\033[93m{}\033[00m".format(f"\nAplicando DT ...\n"))
 
