@@ -6,7 +6,25 @@ from utils.metrics import accuracy_score
 
 class Node:
     
-    """Implementation of a simple binary tree for DT classifier."""
+    """Implementation of a simple binary tree for DT classifier.
+
+    Attributes
+    ----------
+    right: Node
+        Right child of the node
+    left: Node
+        Left child of the node
+    column: int
+        Column index of the feature used to split the node
+    threshold: float
+        Threshold used to split the node
+    probas: np.array
+        Probabilities of each class in the node
+    depth: int
+        Depth of the node in the tree
+    is_leaf: bool
+        True if the node is a leaf, False otherwise
+    """
     
     def __init__(self) -> None:
         self.right = None
@@ -22,6 +40,23 @@ class DecisionTree(Model):
     """
     Decision Tree class built with Nodes' class.
     The generated tree uses diferent criterions, conflict resolutions and pruning (pre/post)
+    
+    Parameters
+    ----------
+    criterion: str, optional
+        Criterion used to split the nodes, defaults to 'gini'
+    prun: str, optional
+        Pruning method, defaults to 'pre'
+    max_depth: int, optional
+        Maximum depth of the tree, defaults to 3
+    min_samples_leaf: int, optional
+        Minimum number of samples in a leaf, defaults to 1
+    min_samples_split: int, optional
+        Minimum number of samples to split a node, defaults to 2
+    x_test: np.array, optional
+        Test set to be used for post pruning, defaults to None
+    y_test: np.array, optional
+        Test set labels to be used for post pruning, defaults to None
     """
 
     def __init__(self, criterion = 'gini',
@@ -48,6 +83,16 @@ class DecisionTree(Model):
     def node_probs(self, y):
         """
         Calculates probability of class in a given node
+
+        Parameters
+        ----------
+        y: np.array
+            Labels of the node
+        
+        Returns
+        -------
+        probas: np.array
+            Probabilities of each class in the node
         """
         probas = []
         # for each unique label calculate the probability for it
@@ -60,12 +105,40 @@ class DecisionTree(Model):
     def gini(self, probas):
         """
         Calculates gini criterion
+
+        Parameters
+        ----------
+        probas: np.array
+            Probabilities of each class in the node
+
+        Returns
+        -------
+        gini: float
+            Gini criterion for the given probabilities
         """
         return 1 - np.sum(probas**2)
     
     def calc_impurity(self, y, criterion='gini'):
         """
         Calculates impurity using the specified criterion.
+
+        Parameters
+        ----------
+        y: np.array
+            Labels of the node
+        criterion: str, optional
+            Criterion used to split the nodes, defaults to 'gini'
+
+        Returns
+        -------
+        impurity: float
+            Impurity of the node
+        
+        Raises
+        ------
+        ValueError
+            If the criterion is not valid
+        
         """
         if criterion == 'gini':
             return self.gini(self.node_probs(y))
@@ -79,6 +152,16 @@ class DecisionTree(Model):
     def entropy(self, probas):
         """
         Calculates entropy for the given probabilities.
+
+        Parameters
+        ----------
+        probas: np.array
+            Probabilities of each class in the node
+
+        Returns
+        -------
+        entropy: float
+            Entropy of the node
         """
         entropy = 0
         for p in probas:
@@ -89,6 +172,16 @@ class DecisionTree(Model):
     def log_loss(self, probas):
         """
         Calculates log loss for the given probabilities.
+
+        Parameters
+        ----------
+        probas: np.array
+            Probabilities of each class in the node
+        
+        Returns
+        -------
+        log_loss: float
+            Log loss of the node
         """
         log_loss = 0
         for p in probas:
@@ -101,6 +194,7 @@ class DecisionTree(Model):
         return log_loss
 
     def fit(self, dataset):
+
         self.dataset = dataset
         X, y = dataset.get_X(), dataset.get_y()
         self.classes = np.unique(y)
@@ -109,15 +203,37 @@ class DecisionTree(Model):
         self.tree.probas = self.node_probs(y)
         self.build_tree(X, y, self.tree)
         self.is_fitted = True
-    
+
     def find_best_split(self, X_idx, y):
        """
-       Calculates the best possible split for the concrete node of the tree
+    Calculates the best possible split for the concrete node of the tree
+
+        Parameters
+        ----------
+            X_idx: np.array
+                Features of the node
+            y: np.array
+                Labels of the node
+
+        Returns
+        -------
+            best_col: int
+                Index of the best feature to split the node
+            best_thr: int
+                Threshold of the best feature to split the node
+            x_left: np.array
+                Features of the left child
+            x_right: np.array
+                Features of the right child
+            y_left: np.array
+                Labels of the left child
+            y_right: np.array
+                Labels of the right child
        """
 
        y = np.array(y, dtype=np.int64)
 
-       best_col = None
+       best_col = None 
        best_thr = None
        best_info_gain = -np.inf
 
@@ -156,6 +272,15 @@ class DecisionTree(Model):
     def build_tree(self, X, y, node):
         """
         Builds the decision tree using the specified criterion, conflict resolution and pruning method.
+
+        Parameters
+        ----------
+        X: np.array
+            Features of the node
+        y: np.array
+            Labels of the node
+        node: Node
+            Node of the tree
         """
     
         # Stop condition - leaf node
@@ -229,6 +354,18 @@ class DecisionTree(Model):
         '''
         Passes one object through decision tree and return the probability of 
         it to belong to each class
+
+        Parameters
+        ----------
+        x: np.array
+            Object to predict
+        node: Node
+            Node of the tree
+
+        Returns
+        -------
+        probas: np.array
+            Probability of the object to belong to each class
         '''
         assert self.is_fitted, 'Model must be fit before predicting'
         # if we have reached the terminal node of the tree
@@ -244,6 +381,20 @@ class DecisionTree(Model):
         return probas
 
     def predict(self, x):
+        '''
+        Passes objects through decision tree and return the predicted class
+        
+        Parameters
+        ----------
+        x: np.array
+            Objects to predict
+        
+        Returns
+        -------
+        preds: np.array
+            Predicted classes
+        '''
+        
         assert self.is_fitted, 'Model must be fit before predicting'
         preds = []
         for i in range(x.shape[0]):
