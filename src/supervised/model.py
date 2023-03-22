@@ -19,7 +19,6 @@ class Model(ABC):
     def predict(self, x: np.ndarray) -> None:
         raise NotImplementedError
 
-    # @abstractmethod
-    # def cost(self, *args, **kwarg) -> None:
-    #     raise NotImplementedError
+    def cost(self, *args, **kwarg) -> None:
+        raise NotImplementedError
     

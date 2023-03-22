@@ -46,12 +46,11 @@ class NaiveBayes(Model):
         self.dataset = dataset
         n = X.shape[0]
 
-        X_by_class = np.array([X[y == c] for c in np.unique(y)])
+        X_by_class = np.array([X[y == c] for c in np.unique(y)], dtype = object)
         self.prior = np.array([len(X_class) / n for X_class in X_by_class])
 
-        counts = np.array([sub_arr.sum(axis=0)
-                          for sub_arr in X_by_class]) + self.alpha
-        self.lk = self.counts / counts.sum(axis=1).reshape(-1, 1)
+        counts = np.array([sub_arr.sum(axis=0) for sub_arr in X_by_class]) + self.alpha
+        self.lk = counts / counts.sum(axis=1).reshape(-1, 1)
         self.is_fitted = True
 
     def predict_proba(self, x):
@@ -77,20 +76,20 @@ class NaiveBayes(Model):
         ``y`` and ``p(x)`` is the prior probability of sample ``x``.
 
         """
-
+    
         assert self.is_fitted, 'Model must be fit before predicting'
 
-        # calculate conditional probabilities for all classes at once
-        exists = x.astype(bool)
-        lk_present = self.lk[:, exists] ** x[exists]
-        lk_marginal = lk_present.prod(axis=1)
-        class_numerators = lk_marginal * self.prior
+        # loop over each observation to calculate conditional probabilities
+        class_numerators = np.zeros(shape=(x.shape[0], self.prior.shape[0]))
+        for i, x in enumerate(x):
+            exists = x.astype(bool)
+            lk_present = self.lk[:, exists] ** x[exists]
+            lk_marginal = (lk_present).prod(axis=1)
+            class_numerators[i] = lk_marginal * self.prior
 
-        # normalize class probabilities and return
-        normalize_term = class_numerators.sum(axis=1)
-        conditional_probas = class_numerators / normalize_term.reshape(-1, 1)
-        assert (conditional_probas.sum(axis=1) - 1 <
-                0.001).all(), 'Rows should sum to 1'
+        normalize_term = class_numerators.sum(axis=1).reshape(-1, 1)
+        conditional_probas = class_numerators / normalize_term
+        assert (conditional_probas.sum(axis=1) - 1 < 0.001).all(), 'Rows should sum to 1'
         return conditional_probas
 
     def predict(self, x):
