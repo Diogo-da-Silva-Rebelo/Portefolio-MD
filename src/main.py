@@ -6,6 +6,7 @@ from supervised.dt import DecisionTree
 from utils.util import train_test_split
 from utils.metrics import accuracy_score
 from supervised.nb import NaiveBayes
+from supervised.prism import PRISM
 
 def test_numeric_data_with_header() -> None:
     print("="*60 + "\n")
@@ -132,6 +133,23 @@ def test_nb():
     acc = accuracy_score(y_true, y_pred)
     print("Accuracy: %4f" % acc)
     print("Cost: %4f" % nb.cost)
+    delete_cache()
+
+def test_prism():
+    dataset_name = "breast-bin.data"
+    ds = read_csv(f"../datasets/{dataset_name}", ',',features=False,label=True)
+    ds.replace_nulls()
+
+    train_data, test_data = train_test_split(ds)
+    print(f"Shape of train data [X_train]: ({train_data.get_X().shape[0]},{train_data.get_X().shape[1]})")
+    print(f"Shape of test data   [X_test]: ({test_data.get_X().shape[0]},{test_data.get_X().shape[1]})")
+
+    prism = PRISM()
+    prism.fit(train_data)
+    y_pred = prism.predict(test_data.get_X())
+    y_true = test_data.get_y()
+    acc = accuracy_score(y_true, y_pred)
+    print("Accuracy: %4f" % acc)
     delete_cache()
 
 def main():
