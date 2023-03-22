@@ -132,7 +132,7 @@ def test_nb():
     y_true = test_data.get_y()
     acc = accuracy_score(y_true, y_pred)
     print("Accuracy: %4f" % acc)
-    print("Cost: %4f" % nb.cost)
+    print("Cost: %4f" % nb.cost())
     delete_cache()
 
 def test_prism():
