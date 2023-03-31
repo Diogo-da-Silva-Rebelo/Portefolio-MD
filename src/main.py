@@ -152,6 +152,22 @@ def test_prism():
     print("Accuracy: %4f" % acc)
     delete_cache()
 
+def test_apriori():
+    dataset_name = "discrete.data"
+    ds = read_csv(f"../datasets/{dataset_name}", ',',features=False,label=False)
+
+    print("\033[93m{}\033[00m".format(f"Aplicando Apriori ...\n"))
+    min_support = 0.5
+    fp_growth = FPGrowth(min_support)
+    fp_growth.fit(ds)
+
+    print(f"Min Support: {min_support}\n")
+    print(str(fp_growth.display_tree()))
+    print("\n")
+    #freq_itemsets = fp_growth.display_freq_itemsets()
+    #print(freq_itemsets)
+    delete_cache()
+
 def main():
     test_nb()
 
