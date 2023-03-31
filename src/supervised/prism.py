@@ -173,3 +173,4 @@ class PRISM(Model):
                 most_common, _ = mode(target_covered, keepdims = True)
                 predictions[covered] = most_common
         return predictions
+    
