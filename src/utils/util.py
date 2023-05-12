@@ -30,3 +30,19 @@ def train_test_split(dataset: Dataset, test_size=0.3):
     test = Dataset(X=X_test, y=y_test, features=features, discrete_features = discretes, label=label)
  
     return train, test
+
+def add_intersect(X):
+    """ 
+    Adds a vector of "1" in front of a matrix:
+
+    | a b |  to  |1 a b | 
+    | c d |      |1 c d |
+    :param X: numpy.array
+    :returns: numpy.array
+    """
+    return np.hstack((np.ones((X.shape[0], 1)), X))
+
+def sigmoid(z):
+    """ Sigmoid function """
+    return 1 / (1 + np.exp(-z))
+
