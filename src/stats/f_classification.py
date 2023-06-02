@@ -32,4 +32,8 @@ def f_classification(dataset: Dataset) -> Union[Tuple[np.ndarray, np.ndarray],
     classes = dataset.get_classes()
     groups = [X[y == c] for c in classes]
     F, p = stats.f_oneway(*groups)
+    # O valor F mede a diferença entre as médias dos grupos em relação à 
+    # variabilidade dentro dos grupos. 
+    # Valores maiores de F indicam maior diferença entre as médias dos grupos.
+    # +p -> - probabilidade de H0 ser verdadeira -> - probabilidade de F ser extremo -> médias muito diferentes
     return F, p
