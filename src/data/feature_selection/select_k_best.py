@@ -8,7 +8,7 @@ import numpy as np
 
 class SelectKBest(Transformer):
 
-    def __init__(self, k: int, score_func: Callable =f_classification) -> None:
+    def __init__(self, k: int, score_func: Callable = f_classification) -> None:
         """The SelectKBest method selects the features according to the k highest scores
         computed using a scoring function.
 

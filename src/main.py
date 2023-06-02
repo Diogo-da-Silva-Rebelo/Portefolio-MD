@@ -169,7 +169,7 @@ def test_apriori():
     delete_cache()
 
 def main():
-    test_nb()
+    test_prism() # Change for testing
 
 
 if __name__ == "__main__" :

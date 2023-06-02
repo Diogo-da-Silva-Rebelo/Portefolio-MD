@@ -66,7 +66,7 @@ class Dataset:
         """
         discrete_mask = self.get_discrete_mask()
         if any(~discrete_mask):
-            self.X[:, ~discrete_mask] = self.X[:, ~discrete_mask].astype(np.float)
+            self.X[:, ~discrete_mask] = self.X[:, ~discrete_mask].astype(float)
 
     def get_X(self):
         """

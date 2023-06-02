@@ -88,7 +88,20 @@ class FPGrowth():
         self._add_to_fp_tree(child, transaction[1:], header_table)
  
     def mine_frequent_itemsets(self, X: np.ndarray, node: FPTree, header_table: Dict[int, Tuple[FPTree, FPTree]]) -> None:
-        pass
+        # Find all paths from node to root
+        paths = self._find_paths(node)
+        for path in paths:
+            # Get the conditional pattern base
+            conditional_pattern_base = self._get_conditional_pattern_base(path)
+            # Construct conditional FP tree
+            conditional_fp_tree, conditional_header_table = self._construct_conditional_fp_tree(conditional_pattern_base)
+            # Mine conditional FP tree
+            if conditional_header_table:
+                self.mine_frequent_itemsets(X, conditional_fp_tree, conditional_header_table)
+            # Add frequent itemset to list
+            frequent_itemset = [node.item]
+            frequent_itemset.extend([path_item.item for path_item in path])
+            self.frequent_itemsets.append((frequent_itemset, node.count / len(X)))
     
     def display_tree(self):
         self.fp_tree.display()
